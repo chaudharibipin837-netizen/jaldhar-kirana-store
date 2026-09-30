@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 
-const API = "http://localhost:5000";
+const API = "https://jaldhar-kirana-store.onrender.com";
 
 function App() {
   const [activeTab, setActiveTab] = useState("products");
@@ -25,7 +25,6 @@ function App() {
   const [saving, setSaving] = useState(false);
   const [productMessage, setProductMessage] = useState("");
 
-  // EDIT MODE
   const [editingProductId, setEditingProductId] = useState(null);
 
   // ===============================
@@ -339,7 +338,6 @@ function App() {
         )
       );
 
-      // Agar wahi product edit ho raha tha
       if (editingProductId === productId) {
         resetProductForm();
       }
@@ -734,8 +732,6 @@ function App() {
                         </p>
                       )}
 
-                      {/* EDIT DELETE BUTTONS */}
-
                       <div className="product-actions">
 
                         <button
@@ -838,8 +834,6 @@ function App() {
                     key={order._id}
                   >
 
-                    {/* ORDER HEADER */}
-
                     <div className="order-card-header">
 
                       <div>
@@ -863,8 +857,6 @@ function App() {
                       </span>
 
                     </div>
-
-                    {/* CUSTOMER DETAILS */}
 
                     <div className="customer-details">
 
@@ -891,8 +883,6 @@ function App() {
                       </p>
 
                     </div>
-
-                    {/* ORDER ITEMS */}
 
                     <div className="order-items">
 
@@ -934,8 +924,6 @@ function App() {
 
                     </div>
 
-                    {/* TOTAL */}
-
                     <div className="order-total">
 
                       <span>Total Amount</span>
@@ -948,8 +936,6 @@ function App() {
                       </strong>
 
                     </div>
-
-                    {/* STATUS CHANGE */}
 
                     <div className="order-actions">
 
