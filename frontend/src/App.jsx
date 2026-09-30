@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 
+const API_URL = "https://jaldhar-kirana-store.onrender.com";
+
 function App() {
   const [backendStatus, setBackendStatus] = useState("Checking...");
   const [products, setProducts] = useState([]);
@@ -14,7 +16,6 @@ function App() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
 
-  // PAYMENT METHOD
   const [paymentMethod, setPaymentMethod] = useState("COD");
 
   const [placingOrder, setPlacingOrder] = useState(false);
@@ -25,7 +26,7 @@ function App() {
   // ===============================
 
   useEffect(() => {
-    fetch("http://localhost:5000/")
+    fetch(`${API_URL}/`)
       .then((response) => response.json())
       .then((data) => {
         setBackendStatus(data.message);
@@ -34,7 +35,7 @@ function App() {
         setBackendStatus("Backend connection failed");
       });
 
-    fetch("http://localhost:5000/api/products")
+    fetch(`${API_URL}/api/products`)
       .then((response) => response.json())
       .then((data) => {
         if (data.success) {
@@ -211,25 +212,20 @@ function App() {
     }));
 
     try {
-      const response = await fetch(
-        "http://localhost:5000/api/orders",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            customerName: customerName.trim(),
-            phone: phone.trim(),
-            address: address.trim(),
-            items: orderItems,
-            totalAmount: cartTotal,
-
-            // PAYMENT METHOD
-            paymentMethod: paymentMethod,
-          }),
-        }
-      );
+      const response = await fetch(`${API_URL}/api/orders`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          customerName: customerName.trim(),
+          phone: phone.trim(),
+          address: address.trim(),
+          items: orderItems,
+          totalAmount: cartTotal,
+          paymentMethod: paymentMethod,
+        }),
+      });
 
       const data = await response.json();
 
@@ -249,9 +245,7 @@ function App() {
     } catch (error) {
       console.error("Order error:", error);
 
-      alert(
-        "Order place nahi hua. Backend check karein."
-      );
+      alert("Order place nahi hua. Backend check karein.");
     } finally {
       setPlacingOrder(false);
     }
