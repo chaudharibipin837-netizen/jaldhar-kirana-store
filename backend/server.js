@@ -2,8 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
+const cloudinary = require("cloudinary").v2;
 
 require("dotenv").config();
 
@@ -13,40 +12,28 @@ const Order = require("./models/order");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// ===============================
+// MIDDLEWARE
+// ===============================
+
 app.use(cors());
 app.use(express.json());
 
 // ===============================
-// UPLOADS FOLDER
+// CLOUDINARY CONFIGURATION
 // ===============================
 
-const uploadFolder = path.join(__dirname, "uploads");
-
-if (!fs.existsSync(uploadFolder)) {
-  fs.mkdirSync(uploadFolder);
-}
-
-app.use("/uploads", express.static(uploadFolder));
-
-// ===============================
-// MULTER STORAGE
-// ===============================
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadFolder);
-  },
-
-  filename: (req, file, cb) => {
-    const uniqueName =
-      Date.now() +
-      "-" +
-      Math.round(Math.random() * 1e9) +
-      path.extname(file.originalname);
-
-    cb(null, uniqueName);
-  },
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_CLOUD_SECRET,
 });
+
+// ===============================
+// MULTER MEMORY STORAGE
+// ===============================
+
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage: storage,
@@ -67,10 +54,10 @@ app.get("/", (req, res) => {
 });
 
 // ===============================
-// IMAGE UPLOAD
+// IMAGE UPLOAD - CLOUDINARY
 // ===============================
 
-app.post("/api/upload", upload.single("image"), (req, res) => {
+app.post("/api/upload", upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -79,16 +66,35 @@ app.post("/api/upload", upload.single("image"), (req, res) => {
       });
     }
 
-    const imageUrl =
-      `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+    const uploadToCloudinary = () => {
+      return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: "jaldhar-kirana-store",
+            resource_type: "image",
+          },
+          (error, result) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve(result);
+            }
+          }
+        );
+
+        stream.end(req.file.buffer);
+      });
+    };
+
+    const result = await uploadToCloudinary();
 
     res.json({
       success: true,
       message: "Image uploaded successfully!",
-      imageUrl: imageUrl,
+      imageUrl: result.secure_url,
     });
   } catch (error) {
-    console.error("Image upload error:", error);
+    console.error("Cloudinary image upload error:", error);
 
     res.status(500).json({
       success: false,
@@ -240,9 +246,7 @@ app.put("/api/products/:id", async (req, res) => {
 
 app.delete("/api/products/:id", async (req, res) => {
   try {
-    const product = await Product.findByIdAndDelete(
-      req.params.id
-    );
+    const product = await Product.findByIdAndDelete(req.params.id);
 
     if (!product) {
       return res.status(404).json({
@@ -281,10 +285,6 @@ app.post("/api/orders", async (req, res) => {
       paymentMethod,
     } = req.body;
 
-    // ===============================
-    // PAYMENT METHOD CHECK
-    // ===============================
-
     const selectedPaymentMethod = paymentMethod || "COD";
 
     if (!["COD", "UPI"].includes(selectedPaymentMethod)) {
@@ -293,10 +293,6 @@ app.post("/api/orders", async (req, res) => {
         message: "Invalid payment method",
       });
     }
-
-    // ===============================
-    // BASIC ORDER VALIDATION
-    // ===============================
 
     if (
       !customerName ||
@@ -528,9 +524,7 @@ app.put("/api/orders/:id/status", async (req, res) => {
 
 app.delete("/api/orders/:id", async (req, res) => {
   try {
-    const order = await Order.findByIdAndDelete(
-      req.params.id
-    );
+    const order = await Order.findByIdAndDelete(req.params.id);
 
     if (!order) {
       return res.status(404).json({
@@ -564,9 +558,7 @@ mongoose
     console.log("MongoDB connected successfully!");
 
     app.listen(PORT, () => {
-      console.log(
-        `Server running at http://localhost:${PORT}`
-      );
+      console.log(`Server running on port ${PORT}`);
     });
   })
   .catch((error) => {
