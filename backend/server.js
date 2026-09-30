@@ -80,7 +80,7 @@ app.post("/api/upload", upload.single("image"), (req, res) => {
     }
 
     const imageUrl =
-      `http://localhost:${PORT}/uploads/${req.file.filename}`;
+      `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
 
     res.json({
       success: true,
